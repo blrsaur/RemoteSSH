@@ -8,9 +8,8 @@ class SshConfig implements GrailsApplicationAware {
     GrailsApplication grailsApplication
 
 
-    public ConfigObject getConfig() {
-        return grailsApplication.config.remotessh ?: ''
-
-    }
+    def getConfig(String configProperty) {
+		grailsApplication.config.remotessh[configProperty] ?: ''
+	}
 
 }
