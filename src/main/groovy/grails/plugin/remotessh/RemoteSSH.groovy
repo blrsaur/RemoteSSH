@@ -4,38 +4,37 @@ import ch.ethz.ssh2.Connection
 import ch.ethz.ssh2.Session
 import ch.ethz.ssh2.StreamGobbler
 
-class RemoteSSH {
-
-    String host = ''
-	String user = ''
-	String sudo = ''
+class RemoteSSH  {
+	String host = ""
+	String user = ""
+	String sudo = ""
 	Integer port=0
-	String userpass = ''
-	String usercommand = ''
-	String filter = ''
+	String userpass=""
+	String usercommand = ""
+	String filter = ""
 
 	StringBuilder output = new StringBuilder()
 
 	String Result(SshConfig ac) throws InterruptedException {
-
-        Object sshuser = ac.config.USER ?: ''
-        Object sshpass = ac.config.PASS ?: ''
-        Object sshkey = ac.config.KEY ?: ''
-        Object sshkeypass = ac.config.KEYPASS ?: ''
-        Object sshport = ac.config.PORT ?: ''
-
-        int scpPort
-        scpPort = port ?: sshport.toString().matches("[0-9]+") { scpPort = sshport as int } ?: 22
-
+		Object sshuser=ac.getConfig("USER")
+		Object sshpass=ac.getConfig("PASS")
+		Object sshkey=ac.getConfig("KEY")
+		Object sshkeypass=ac.getConfig("KEYPASS")
+		Object sshport=ac.getConfig("PORT")
+		//println "----$sshuser"
+		Integer scpPort = port
+		if (!scpPort) {
+			String sps=sshport.toString()
+			if (sps.matches("[0-9]+")) {
+				scpPort=Integer.parseInt(sps)
+			}
+		}
 		String username = user ?: sshuser.toString()
 		String password = userpass ?: sshpass.toString()
-
 		File keyfile = new File(sshkey.toString())
 		String keyfilePass = sshkeypass.toString()
-
-
 		try {
-			Connection conn = new Connection(host,scpPort)
+			Connection conn = new Connection(host,scpPort ?: 22)
 			/* Now connect */
 			conn.connect()
 			/* Authenticate */
@@ -54,7 +53,7 @@ class RemoteSSH {
 			Session sess = conn.openSession()
 			sess.requestPTY("vt220")
 			if (sudo == "sudo") {
-				sess.execCommand("sudo -i")
+				sess.execCommand("sudo bash")
 				// sess.execCommand("sudo bash")
 			} else {
 				sess.execCommand("/bin/bash")
@@ -66,6 +65,7 @@ class RemoteSSH {
 			sleep(10)
 			InputStream stdout = new StreamGobbler(sess.getStdout())
 			BufferedReader br = new BufferedReader(new InputStreamReader(stdout))
+			// output.append("Remote execution of $usercommand returned:<br>")
 			while (true) {
 				String line = br.readLine()
 				if (line == null)
